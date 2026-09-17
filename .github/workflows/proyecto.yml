@@ -22,59 +22,111 @@ jobs:
 
           test -f Readme.md
           test -f codigo/ADS7824/ADS7824.ino
+          test -f mediciones/mediciones_01.md
 
           echo "Proyecto verificado correctamente"
 
-      - name: Crear borrador del artículo
+      - name: Generar artículo con IA
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          mkdir -p documentacion
+          node <<'NODE'
+          const fs = require('fs');
 
-          cat > documentacion/articulo.md <<'EOF'
-          # ADS7824 con Arduino Mega
+          const read = (file) => fs.existsSync(file)
+            ? fs.readFileSync(file, 'utf8')
+            : '(Archivo no disponible)';
 
-          ## Introducción
+          const readme = read('Readme.md');
+          const codigo = read('codigo/ADS7824/ADS7824.ino');
+          const mediciones = read('mediciones/mediciones_01.md');
 
-          Proyecto experimental para estudiar el funcionamiento del ADC ADS7824
-          utilizando un Arduino Mega 2560.
+          const prompt = `
+          Actúa como redactor técnico especializado en electrónica,
+          instrumentación y adquisición de datos.
 
-          ## Hardware utilizado
+          Genera un artículo técnico en español para el proyecto ADS7824
+          con Arduino Mega 2560.
 
-          - ADS7824P
-          - Arduino Mega 2560
-          - Bus paralelo de 8 bits
-          - Capacitores de referencia y filtrado
+          IMPORTANTE:
+          - Utiliza exclusivamente la información proporcionada abajo.
+          - No inventes mediciones, componentes, conexiones ni resultados.
+          - Conserva exactamente los valores numéricos de las mediciones.
+          - Si existe una incertidumbre o un dato que necesita verificarse,
+            indícalo explícitamente.
+          - Organiza el texto en Markdown.
+          - Incluye: objetivo, hardware, conexiones, funcionamiento,
+            software, mediciones experimentales, análisis y próximos pasos.
+          - El texto debe ser técnico, claro y adecuado para un blog de
+            laboratorio electrónico como SIEE Lab.
+          - No presentes como conclusión definitiva algo que los datos
+            todavía no permitan confirmar.
 
-          ## Conexiones
+          ==================== README ====================
+          ${readme}
 
-          El bus de datos D0-D7 del ADS7824 está conectado al puerto A
-          del Arduino Mega.
+          ==================== CÓDIGO ====================
+          ${codigo}
 
-          ## Software
+          ==================== MEDICIONES ====================
+          ${mediciones}
+          `;
 
-          El Arduino realiza la conversión y transmite los resultados
-          mediante el puerto serie a 115200 baudios.
+          async function main() {
+            if (!process.env.OPENAI_API_KEY) {
+              throw new Error('OPENAI_API_KEY no está configurada');
+            }
 
-          ## Mediciones experimentales
+            const response = await fetch('https://api.openai.com/v1/responses', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'gpt-5.6-luna',
+                input: prompt
+              })
+            });
 
-          EOF
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`OpenAI API ${response.status}: ${errorText}`);
+            }
 
-          cat mediciones/mediciones_01.md >> documentacion/articulo.md
+            const data = await response.json();
 
-          cat >> documentacion/articulo.md <<'EOF'
+            const text = data.output
+              ?.filter(item => item.type === 'message')
+              ?.flatMap(item => item.content || [])
+              ?.filter(item => item.type === 'output_text')
+              ?.map(item => item.text)
+              ?.join('\n');
 
-          ## Conclusiones
+            if (!text) {
+              throw new Error('La API no devolvió texto de salida');
+            }
 
-          Los resultados anteriores forman parte de las primeras pruebas
-          experimentales del ADS7824.
+            fs.mkdirSync('documentacion', { recursive: true });
 
-          Documento generado automáticamente como borrador.
-          EOF
+            fs.writeFileSync(
+              'documentacion/articulo_IA.md',
+              text,
+              'utf8'
+            );
 
-          echo "Borrador generado:"
-          cat documentacion/articulo.md
+            console.log('Artículo generado correctamente:');
+            console.log(text);
+          }
 
-      - name: Guardar borrador
+          main().catch(error => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Guardar artículo generado
         uses: actions/upload-artifact@v4
         with:
-          name: borrador-ADS7824
-          path: documentacion/articulo.md
+          name: borrador-ADS7824-IA
+          path: documentacion/articulo_IA.md
