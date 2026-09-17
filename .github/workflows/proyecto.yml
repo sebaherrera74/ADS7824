@@ -1,0 +1,27 @@
+name: Prueba del proyecto ADS7824
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  verificar-proyecto:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Mostrar información
+        run: |
+          echo "Proyecto: ADS7824"
+          echo "Rama: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+
+      - name: Verificar archivos
+        run: |
+          test -f Readme.md
+          test -f codigo/ADS7824/ADS7824.ino
+          echo "Estructura básica del proyecto: OK"
