@@ -1,30 +1,3 @@
-name: Generar borrador ADS7824
-
-on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
-
-jobs:
-  generar-borrador:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v6
-
-      - name: Verificar proyecto
-        run: |
-          echo "Proyecto: ADS7824"
-          echo "Rama: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-
-          test -f Readme.md
-          test -f codigo/ADS7824/ADS7824.ino
-
-          echo "Proyecto verificado correctamente"
-
       - name: Crear borrador del artículo
         run: |
           mkdir -p documentacion
@@ -54,24 +27,24 @@ jobs:
           El Arduino realiza la conversión y transmite los resultados
           mediante el puerto serie a 115200 baudios.
 
-          ## Mediciones
+          ## Mediciones experimentales
 
-          Esta sección será completada posteriormente a partir de los datos
-          experimentales almacenados en el proyecto.
+          EOF
 
-          ## Resultados
+          cat mediciones/mediciones_01.md >> documentacion/articulo.md
 
-          Los resultados experimentales serán incorporados en una etapa
-          posterior.
+          cat >> documentacion/articulo.md <<'EOF'
 
           ## Conclusiones
+
+          Los resultados anteriores forman parte de las primeras pruebas
+          experimentales del ADS7824.
 
           Documento generado automáticamente como borrador.
           EOF
 
           echo "Borrador generado:"
           cat documentacion/articulo.md
-
       - name: Guardar borrador
         uses: actions/upload-artifact@v4
         with:
