@@ -1,3 +1,30 @@
+name: Generar borrador ADS7824
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  generar-borrador:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Verificar proyecto
+        run: |
+          echo "Proyecto: ADS7824"
+          echo "Rama: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+
+          test -f Readme.md
+          test -f codigo/ADS7824/ADS7824.ino
+
+          echo "Proyecto verificado correctamente"
+
       - name: Crear borrador del artículo
         run: |
           mkdir -p documentacion
@@ -45,6 +72,7 @@
 
           echo "Borrador generado:"
           cat documentacion/articulo.md
+
       - name: Guardar borrador
         uses: actions/upload-artifact@v4
         with:
