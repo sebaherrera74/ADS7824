@@ -1,4 +1,4 @@
-name: Prueba del proyecto ADS7824
+name: Generar borrador ADS7824
 
 on:
   push:
@@ -7,21 +7,73 @@ on:
   workflow_dispatch:
 
 jobs:
-  verificar-proyecto:
+  generar-borrador:
     runs-on: ubuntu-latest
 
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v6
 
-      - name: Mostrar información
+      - name: Verificar proyecto
         run: |
           echo "Proyecto: ADS7824"
           echo "Rama: ${{ github.ref_name }}"
           echo "Commit: ${{ github.sha }}"
 
-      - name: Verificar archivos
-        run: |
           test -f Readme.md
           test -f codigo/ADS7824/ADS7824.ino
-          echo "Estructura básica del proyecto: OK"
+
+          echo "Proyecto verificado correctamente"
+
+      - name: Crear borrador del artículo
+        run: |
+          mkdir -p documentacion
+
+          cat > documentacion/articulo.md <<'EOF'
+          # ADS7824 con Arduino Mega
+
+          ## Introducción
+
+          Proyecto experimental para estudiar el funcionamiento del ADC ADS7824
+          utilizando un Arduino Mega 2560.
+
+          ## Hardware utilizado
+
+          - ADS7824P
+          - Arduino Mega 2560
+          - Bus paralelo de 8 bits
+          - Capacitores de referencia y filtrado
+
+          ## Conexiones
+
+          El bus de datos D0-D7 del ADS7824 está conectado al puerto A
+          del Arduino Mega.
+
+          ## Software
+
+          El Arduino realiza la conversión y transmite los resultados
+          mediante el puerto serie a 115200 baudios.
+
+          ## Mediciones
+
+          Esta sección será completada posteriormente a partir de los datos
+          experimentales almacenados en el proyecto.
+
+          ## Resultados
+
+          Los resultados experimentales serán incorporados en una etapa
+          posterior.
+
+          ## Conclusiones
+
+          Documento generado automáticamente como borrador.
+          EOF
+
+          echo "Borrador generado:"
+          cat documentacion/articulo.md
+
+      - name: Guardar borrador
+        uses: actions/upload-artifact@v4
+        with:
+          name: borrador-ADS7824
+          path: documentacion/articulo.md
